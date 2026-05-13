@@ -1,0 +1,63 @@
+# Variant B: soft-argmax cranked, anchor dropped.
+#
+# Same fine-tune setup as variant A, but with the soft-argmax pressure
+# turned up (5x focal_weight, sharper temperature) and the paper's
+# gradient_L1 anchor dropped. Tests whether stronger position pressure
+# breaks A's plateau and whether the anchor was diluting the focal signal.
+#
+# Launch:
+#   python train.py --config configs/ft_b_softargmax_cranked.yaml \
+#                   --resume runs/deeptfus/ckpt_best.pt --finetune
+
+data:
+  resolution: 256
+  n_transducer_points: 512
+
+model:
+  base_width: 16
+  cond_dim: 128
+  n_transducer_freqs: 8
+  dynamic_conv_kernel: 3
+  cross_attention_heads: 4
+  cross_attention_levels:
+    - level1
+    - level2
+    - level3
+    - bottleneck
+  cross_attention_bidirectional: false
+  use_film_decoder: false
+
+loss:
+  alpha: 5.0
+  grad_weight: 0.0           # paper anchor DROPPED (vs A's 0.1)
+  focal_weight: 5.0e-5       # 5x A
+  focal_temperature: 0.03    # sharper than A (0.05)
+  focal_warmup_off: 0
+  focal_warmup_epochs: 3
+
+train:
+  seed: 0
+  epochs: 15
+  batch_size: 4
+  lr: 3.0e-5
+  weight_decay: 1.0e-4
+  grad_clip: 1.0
+  num_workers: 4
+  val_every: 1
+  precision: pure-bf16
+  grad_checkpoint_encoder: false
+  channels_last: false
+  compile: false
+  save_every_epochs: 1
+  wandb_project: deeptfus-reproduction
+  # wandb_entity: your-team-or-user
+
+eval:
+  voxel_size_mm: 0.5
+  focal_threshold_db: -6.0
+  off_target_min_dist_mm: 10.0
+  n_warmup_inferences: 3
+  save_predictions: false
+
+output:
+  run_dir: runs/deeptfus_ft_b

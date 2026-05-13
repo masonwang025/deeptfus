@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Training outputs (regenerable)
+runs/
+ckpts/
+
+# Downloaded data + HuggingFace cache
+external/
+
+# Large binaries that shouldn't live in git
+*.pt
+*.pth
+*.ckpt
+*.npz
+*.npy
+*.bin
+*.safetensors
+*.h5
+*.hdf5

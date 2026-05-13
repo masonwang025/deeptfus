@@ -1,0 +1,69 @@
+# Variant E: variant C plus a soft Dice loss on the -6 dB iso-volume.
+#
+# Adds an orthogonal-mechanism loss on top of C's recipe. Soft-argmax
+# pulls the centroid; Dice pulls the half-max iso-volume shape to match
+# ground truth. Tests whether the two terms compose to fix focal-position,
+# peak amplitude, and focal-volume diffuseness simultaneously.
+#
+# The Dice mask is sigmoid((p_norm - 0.5) / 0.05); the loss is
+# 1 - Dice(soft_mask(pred), soft_mask(target)).
+#
+# Launch:
+#   python train.py --config configs/ft_e_dice_anchored.yaml \
+#                   --resume runs/deeptfus/ckpt_best.pt --finetune
+
+data:
+  resolution: 256
+  n_transducer_points: 512
+
+model:
+  base_width: 16
+  cond_dim: 128
+  n_transducer_freqs: 8
+  dynamic_conv_kernel: 3
+  cross_attention_heads: 4
+  cross_attention_levels:
+    - level1
+    - level2
+    - level3
+    - bottleneck
+  cross_attention_bidirectional: false
+  use_film_decoder: false
+
+loss:
+  alpha: 5.0
+  grad_weight: 0.1
+  focal_weight: 5.0e-5
+  focal_temperature: 0.03
+  focal_warmup_off: 0
+  focal_warmup_epochs: 3
+  dice_weight: 3.0e-3        # NEW vs C
+  dice_threshold: 0.5        # half-max amplitude, i.e. -6 dB
+  dice_temperature: 0.05     # sigmoid soft-mask sharpness
+
+train:
+  seed: 0
+  epochs: 15
+  batch_size: 4
+  lr: 3.0e-5
+  weight_decay: 1.0e-4
+  grad_clip: 1.0
+  num_workers: 4
+  val_every: 1
+  precision: pure-bf16
+  grad_checkpoint_encoder: false
+  channels_last: false
+  compile: false
+  save_every_epochs: 1
+  wandb_project: deeptfus-reproduction
+  # wandb_entity: your-team-or-user
+
+eval:
+  voxel_size_mm: 0.5
+  focal_threshold_db: -6.0
+  off_target_min_dist_mm: 10.0
+  n_warmup_inferences: 3
+  save_predictions: false
+
+output:
+  run_dir: runs/deeptfus_ft_e

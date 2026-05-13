@@ -1,0 +1,9 @@
+torch>=2.1
+numpy>=1.24
+scipy>=1.11
+matplotlib>=3.7
+pyyaml>=6.0
+huggingface_hub>=1.0
+hf-xet>=1.0
+tqdm>=4.65
+wandb>=0.16

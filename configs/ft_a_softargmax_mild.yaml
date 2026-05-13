@@ -1,0 +1,64 @@
+# Variant A: soft-argmax mild fine-tune.
+#
+# Continues training the base checkpoint for 15 epochs with a soft-argmax
+# focal-position L1 term added at gentle weight (1e-5). The paper's
+# composite loss has no signal for "where the peak should land", so this
+# variant tests whether any position-aware aux signal moves
+# focal_position_error_mm without breaking relative_l2.
+#
+# Launch:
+#   python train.py --config configs/ft_a_softargmax_mild.yaml \
+#                   --resume runs/deeptfus/ckpt_best.pt --finetune
+
+data:
+  resolution: 256
+  n_transducer_points: 512
+
+model:
+  base_width: 16
+  cond_dim: 128
+  n_transducer_freqs: 8
+  dynamic_conv_kernel: 3
+  cross_attention_heads: 4
+  cross_attention_levels:
+    - level1
+    - level2
+    - level3
+    - bottleneck
+  cross_attention_bidirectional: false
+  use_film_decoder: false
+
+loss:
+  alpha: 5.0
+  grad_weight: 0.1
+  focal_weight: 1.0e-5
+  focal_temperature: 0.05
+  focal_warmup_off: 0
+  focal_warmup_epochs: 3
+
+train:
+  seed: 0
+  epochs: 15
+  batch_size: 4
+  lr: 3.0e-5
+  weight_decay: 1.0e-4
+  grad_clip: 1.0
+  num_workers: 4
+  val_every: 1
+  precision: pure-bf16
+  grad_checkpoint_encoder: false
+  channels_last: false
+  compile: false
+  save_every_epochs: 1
+  wandb_project: deeptfus-reproduction
+  # wandb_entity: your-team-or-user
+
+eval:
+  voxel_size_mm: 0.5
+  focal_threshold_db: -6.0
+  off_target_min_dist_mm: 10.0
+  n_warmup_inferences: 3
+  save_predictions: false
+
+output:
+  run_dir: runs/deeptfus_ft_a
